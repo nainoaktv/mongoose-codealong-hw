@@ -240,11 +240,18 @@ app.get('/comments/:id', (req, res) => {
     });
 });
 
+app.get('/posts/:id/comments', (req, res) => {
+    Post.findById(req.params.id).populate('comments').exec()
+    .then(post => {
+        console.log('Hey is the post', post);
+    })
+})
+
 
 app.post('/posts/:id/comments', (req, res) => {
     Post.findById(req.params.id)
     .then(post => {
-        console.log('Heyyy, this is the post', post);
+        console.log('This is the post >', post);
         // create and pust comment inside of post
         Comment.create({
             header: req.body.header,
@@ -265,6 +272,44 @@ app.post('/posts/:id/comments', (req, res) => {
         console.log('error', error);
         res.json({ message: "Error ocurred, please try again" });
     });
+});
+
+app.put('/comments/:id', (req, res) => {
+    console.log('route is being on PUT')
+    Comment.findById(req.params.id)
+    .then(foundComment => {
+        console.log('Comment found', foundComment);
+        Comment.findByIdAndUpdate(req.params.id, { 
+                header: req.body.header ? req.body.header : foundComment.header,
+                content: req.body.content ? req.body.content : foundComment.content,
+        }, { 
+            upsert: true 
+        })
+        .then(comment => {
+            console.log('Comment was updated', comment);
+            res.redirect(`/comments/${req.params.id}`);
+        })
+        .catch(error => {
+            console.log('error', error) 
+            res.json({ message: "Error ocurred, please try again" })
+        })
+    })
+    .catch(error => {
+        console.log('error', error) 
+        res.json({ message: "Error ocurred, please try again" })
+    })
+});
+
+app.delete('/comments/:id', (req, res) => {
+    Comment.findByIdAndRemove(req.params.id)
+    .then(response => {
+        console.log('This was deleted', response);
+        res.json({ message: `Comment ${req.params.id} was deleted`});
+    })
+    .catch(error => {
+        console.log('error', error) 
+        res.json({ message: "Error ocurred, please try again" });
+    })
 });
 
 
