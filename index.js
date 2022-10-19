@@ -3,7 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const Post = require('./schemas/post');
 const User = require('./schemas/user');
-const { Comment } = require('./schemas/comment')
+const Comment = require('./schemas/comment');
 
 const mongoDb = 'mongodb://127.0.0.1/mongoose-codealong';
 mongoose.connect(mongoDb, { useNewUrlParser: true });
@@ -225,32 +225,6 @@ app.get('/comments', (req, res) => {
     });
 });
 
-app.get('/comments/:id', (req, res) => {
-    console.log('find comment by ID', req.params.id);
-    // console.log(mongoose.Types.ObjectId(req.params.id))
-    Comment.findOne({ _id: mongoose.Types.ObjectId(req.params.id) })
-    .then(comment => {
-        console.log('Here is the comment', comment);
-        res.json({ comment: comment });
-    })
-    .catch(error => { 
-        console.log('error', error);
-        res.json({ message: "Error ocurred, please try again" });
-    });
-});
-
-
-app.get('/comments', (req, res) => {
-    Comment.find({})
-    .then(comments => {
-        console.log('All comments', comments);
-        res.json({ comments: comments });
-    })
-    .catch(error => { 
-        console.log('error', error);
-        res.json({ message: "Error ocurred, please try again" });
-    });
-});
 
 app.get('/comments/:id', (req, res) => {
     console.log('find comment by ID', req.params.id);
