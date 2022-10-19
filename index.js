@@ -3,7 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const Post = require('./schemas/post');
 const User = require('./schemas/user');
-// const { Comment } = require('./schemas/comment')
+const { Comment } = require('./schemas/comment')
 
 const mongoDb = 'mongodb://127.0.0.1/mongoose-codealong';
 mongoose.connect(mongoDb, { useNewUrlParser: true });
@@ -115,159 +115,184 @@ app.delete('/users/:email', (req, res) => {
 
 // POST ROUTES
 app.get('/posts', (req, res) => {
-  Post.find({})
-      .then(posts => {
-          console.log('All posts', posts);
-          res.json({ posts: posts });
-      })
-      .catch(error => {
-          console.log('error', error);
-          res.json({ message: "Error ocurred, please try again" });
-      });
+    Post.find({})
+    .then(posts => {
+        console.log('All posts', posts);
+        res.json({ posts: posts });
+    })
+    .catch(error => { 
+        console.log('error', error)
+        res.json({ message: 'Error occured, please try again' });
+    });
 });
 
-app.get('/posts/:title', (req, res) => {
-  console.log('find user by', req.params.title)
-  Post.findOne({
-      title: req.params.title
-  })
-      .then(post => {
-          console.log('Here is the user', post);
-          res.json({ post: post });
-      })
-      .catch(error => {
-          console.log('error', error);
-          res.json({ message: "Error ocurred, please try again" });
-      });
+// app.get('/posts/:title', (req, res) => {
+//     console.log('find post by', req.params.title);
+//     Post.findOne({
+//         title: req.params.title
+//     })
+//     .then(post => {
+//         console.log('Here is the post', post);
+//         res.json({ post: post });
+//     })
+//     .catch(error => { 
+//         console.log('error', error);
+//         res.json({ message: "Error ocurred, please try again" });
+//     });
+// });
+
+app.get('/posts/:id', (req, res) => {
+    console.log('find post by ID', req.params.id);
+    // console.log(mongoose.Types.ObjectId(req.params.id))
+    Post.findOne({ _id: mongoose.Types.ObjectId(req.params.id) }).populate('comments').exec()
+    .then(post => {
+        console.log('Here is the post', post);
+        res.json({ post: post });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
+
 
 app.post('/posts', (req, res) => {
-  Post.create({
-      title: req.body.title,
-      body: req.body.body,
-  })
-      .then(post => {
-          console.log('New post =>>', post);
-          res.json({ post: post });
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" })
-      });
+    Post.create({
+        title: req.body.title,
+        body: req.body.body,
+    })
+    .then(post => {
+        console.log('New post =>>', post);
+        res.json({ post: post });
+    })
+    .catch(error => { 
+        console.log('error', error) 
+        res.json({ message: "Error ocurred, please try again" })
+    });
 });
 
-app.put('/posts/:title', (req, res) => {
-  console.log('route is being on PUT')
-  User.findOne({ title: req.params.title })
-      .then(foundPost => {
-          Post.findOneAndUpdate({ title: req.params.title },
-              {
-                  title: req.body.title ? req.body.title : foundPost.title,
-                  body: req.body.body ? req.body.body : foundPost.body,
-              })
-              .then(post => {
-                  res.redirect(`/users/${req.params.title}`)
-              })
-              .catch(error => {
-                  console.log('error', error)
-                  res.json({ message: "Error" })
-              })
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" })
-      })
-
+app.put('/posts/:id', (req, res) => {
+    console.log('route is being on PUT')
+    Post.findById(req.params.id)
+    .then(foundPost => {
+        console.log('Post found', foundPost);
+        Post.findByIdAndUpdate(req.params.id, { 
+                title: req.body.title ? req.body.title : foundPost.title,
+                body: req.body.body ? req.body.body : foundPost.body,
+        }, { 
+            upsert: true 
+        })
+        .then(post => {
+            console.log('Post was updated', post);
+            res.redirect(`/posts/${req.params.id}`);
+        })
+        .catch(error => {
+            console.log('error', error) 
+            res.json({ message: "Error ocurred, please try again" })
+        })
+    })
+    .catch(error => {
+        console.log('error', error) 
+        res.json({ message: "Error ocurred, please try again" })
+    })
 });
 
-app.delete('/posts/:title', (req, res) => {
-  User.findOneAndRemove({ email: req.params.title })
-      .then(response => {
-          console.log('This was delete', response);
-          res.json({ message: `${req.params.title} deleted` });
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" });
-      })
+
+app.delete('/posts/:id', (req, res) => {
+    Post.findByIdAndRemove(req.params.id)
+    .then(response => {
+        console.log('This was deleted', response);
+        res.json({ message: `Post ${req.params.id} was deleted`});
+    })
+    .catch(error => {
+        console.log('error', error) 
+        res.json({ message: "Error ocurred, please try again" });
+    })
 });
 
-// COMMENT ROUTES
+
+// COMMENTS ROUTES
+
 app.get('/comments', (req, res) => {
-  Comment.find({})
-      .then(comments => {
-          res.json({ comments: comments });
-      })
-      .catch(error => {
-          console.log('error', error);
-          res.json({ message: "Error ocurred, please try again" });
-      });
+    Comment.find({})
+    .then(comments => {
+        console.log('All comments', comments);
+        res.json({ comments: comments });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
 
-app.get('/comments/:header', (req, res) => {
-  console.log('find user by', req.params.header)
-  Comment.findOne({
-      header: req.params.header
-  })
-      .then(comment => {
-          res.json({ post: post });
-      })
-      .catch(error => {
-          console.log('error', error);
-          res.json({ message: "Error" });
-      });
+app.get('/comments/:id', (req, res) => {
+    console.log('find comment by ID', req.params.id);
+    // console.log(mongoose.Types.ObjectId(req.params.id))
+    Comment.findOne({ _id: mongoose.Types.ObjectId(req.params.id) })
+    .then(comment => {
+        console.log('Here is the comment', comment);
+        res.json({ comment: comment });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
 
-app.post('/comments', (req, res) => {
-  Comment.create({
-      header: req.body.header,
-      content: req.body.content,
-      date: req.body.date
-  })
-      .then(comment => {
-          res.json({ comment: comment });
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" })
-      });
+
+app.get('/comments', (req, res) => {
+    Comment.find({})
+    .then(comments => {
+        console.log('All comments', comments);
+        res.json({ comments: comments });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
 
-app.put('/comments/:header', (req, res) => {
-  Comment.findOne({ header: req.params.header })
-      .then(foundComment => {
-          Comment.findOneAndUpdate({ header: req.params.header },
-              {
-                  header: req.body.header ? req.body.header : foundComment.header,
-                  body: req.body.body ? req.body.body : foundComment.body,
-                  date: req.body.date ? req.body.date : foundComment.date
-              })
-              .then(comment => {
-                  console.log(comment);
-                  res.redirect(`/users/${req.params.header}`)
-              })
-              .catch(error => {
-                  console.log('error', error)
-                  res.json({ message: "Error" })
-              })
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" })
-      })
-
+app.get('/comments/:id', (req, res) => {
+    console.log('find comment by ID', req.params.id);
+    // console.log(mongoose.Types.ObjectId(req.params.id))
+    Comment.findOne({ _id: mongoose.Types.ObjectId(req.params.id) })
+    .then(comment => {
+        console.log('Here is the comment', comment);
+        res.json({ comment: comment });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
 
-app.delete('/comments/:header', (req, res) => {
-  Comment.findOneAndRemove({ email: req.params.header })
-      .then(response => {
-          res.json({ message: `${req.params.header} deleted` });
-      })
-      .catch(error => {
-          console.log('error', error)
-          res.json({ message: "Error" });
-      })
+
+app.post('/posts/:id/comments', (req, res) => {
+    Post.findById(req.params.id)
+    .then(post => {
+        console.log('Heyyy, this is the post', post);
+        // create and pust comment inside of post
+        Comment.create({
+            header: req.body.header,
+            content: req.body.content
+        })
+        .then(comment => {
+            post.comments.push(comment);
+            // save the post
+            post.save();
+            res.redirect(`/posts/${req.params.id}`);
+        })
+        .catch(error => { 
+            console.log('error', error);
+            res.json({ message: "Error ocurred, please try again" });
+        });
+    })
+    .catch(error => { 
+        console.log('error', error);
+        res.json({ message: "Error ocurred, please try again" });
+    });
 });
+
 
 // app.get('/findAll', (req, res) => {
 //   User.find({}, (err, users) => {
